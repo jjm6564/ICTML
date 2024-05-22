@@ -3,16 +3,13 @@ from sklearn import svm
 from sklearn.metrics import accuracy_score
 from sklearn.preprocessing import LabelEncoder
 import CustomDataset as CDs
-import torch
-import torch.nn as nn
-import torch.optim as optim
 import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
 
 CTroot_folder = CDs.root_folder
 CTtransform = CDs.transform
 
-dataset = CDs.CustomDataset(root_dir=CTroot_folder, mode='test', transform=CTtransform)
+dataset = CDs.CustomDataset(root_dir=CTroot_folder, mode='train', transform=CTtransform)
 dataloader = CDs.DataLoader(dataset, batch_size=32, shuffle=True, num_workers=4)
 
 
@@ -33,7 +30,7 @@ def My_predict():
     y = le.fit_transform(y)
 
     # SVM 학습
-    clf = svm.SVC(kernel='sigmoid')
+    clf = svm.SVC(kernel='linear')
     clf.fit(X, y)
 
     # 모델 평가
@@ -75,6 +72,9 @@ def My_predict():
     plt.show()
 
 
+
+
+
 # 이미지 데이터 및 레이블 준비
 
 if __name__ == '__main__':
@@ -113,5 +113,6 @@ if __name__ == '__main__':
 
     # # 첫 번째 배치의 이미지와 예측된 레이블 시각화
     # for i in range(6):  # 예시로 첫 5개 이미지를 출력합니다.
-    #     show_image(dataset[i][0], f"True Label: {y[i]}, Predicted: {predictions[i]}")
+    #     show_image(dataset[i][0], f"True Label: {y[i]}, Predicted: {predictions[i]}")'
     My_predict()
+    
