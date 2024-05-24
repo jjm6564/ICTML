@@ -6,10 +6,10 @@ import torch.nn.functional as F
 import numpy as np
 import matplotlib.pyplot as plt
 from torchvision.transforms import Compose, Resize, ToTensor
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import DataLoader
 from PIL import Image
+from CustomDataset import CustomDataset
 
-# NeRF MLP 모델 정의
 class NeRF(nn.Module):
     def __init__(self):
         super().__init__()
@@ -25,7 +25,6 @@ class NeRF(nn.Module):
         density = torch.relu(x[:, 3])
         return rgb, density
 
-# 3D 출력을 위한 함수
 def plot_3d_object(points, rgb):
     fig = plt.figure(figsize=(10, 8))
     ax = fig.add_subplot(111, projection='3d')
@@ -36,7 +35,6 @@ def plot_3d_object(points, rgb):
     ax.set_title('NeRF 3D Object')
     plt.show()
 
-# JSON 파일에서 데이터 로드
 def load_data_from_json(json_file, root_dir):
     with open(json_file, 'r') as f:
         data = json.load(f)
@@ -50,44 +48,24 @@ def load_data_from_json(json_file, root_dir):
         transform_matrices.append(transform_matrix)
     return img_paths, transform_matrices
 
-# 예측된 밀도에 따라 3D 객체를 생성하고 시각화하는 함수
 def generate_and_visualize_object(nerf_model, points, device):
     points_tensor = torch.tensor(points, dtype=torch.float32).to(device)
     with torch.no_grad():
         rgb, density = nerf_model(points_tensor)
     rgb = rgb.cpu().numpy()
     density = density.cpu().numpy()
-    density_threshold = 0.001  # 밀도 임계값을 높여서 더 명확한 결과를 얻도록 설정
+    density_threshold = 0.5                                          #density
     sampled_points = points[density > density_threshold]
     sampled_rgb = rgb[density > density_threshold]
     plot_3d_object(sampled_points, sampled_rgb)
 
-# 학습 데이터셋 정의
-class CustomDataset(Dataset):
-    def __init__(self, img_paths, transform_matrices, transform=None):
-        self.img_paths = img_paths
-        self.transform_matrices = transform_matrices
-        self.transform = transform
-
-    def __len__(self):
-        return len(self.img_paths)
-
-    def __getitem__(self, idx):
-        image = Image.open(self.img_paths[idx])
-        if self.transform:
-            image = self.transform(image)
-        label = torch.tensor(self.transform_matrices[idx])
-        return image, label
-
-# Training
-def train_nerf_from_dataset(root_folder, json_file, num_epochs=200):
+def train_nerf_from_dataset(root_folder, json_file, num_epochs=10):                     # Epoch
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
 
-    img_paths, transform_matrices = load_data_from_json(json_file, root_folder)
     transform = Compose([Resize((224, 224)), ToTensor()])
-    train_dataset = CustomDataset(img_paths, transform_matrices, transform=transform)
-    train_dataloader = DataLoader(train_dataset, batch_size=1, shuffle=True, num_workers=4)
+    train_dataset = CustomDataset(root_folder, 'train', transform=transform)
+    train_dataloader = DataLoader(train_dataset, batch_size=1, shuffle=True, num_workers=4)         #Batch
 
     nerf_model = NeRF().to(device)
     optimizer = torch.optim.Adam(nerf_model.parameters(), lr=1e-3)
@@ -124,8 +102,7 @@ def train_nerf_from_dataset(root_folder, json_file, num_epochs=200):
 
     torch.save(nerf_model.state_dict(), "nerf_model.pth")
 
-    val_img_paths, val_transform_matrices = load_data_from_json(json_file.replace('train', 'val'), root_folder)
-    val_dataset = CustomDataset(val_img_paths, val_transform_matrices, transform=transform)
+    val_dataset = CustomDataset(root_folder, 'val', transform=transform)
     val_points = []
     
     for images, labels in DataLoader(val_dataset, batch_size=1):

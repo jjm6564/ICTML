@@ -21,7 +21,7 @@ def My_predict():
     X = []
     y = []
     for images, labels in dataloader:
-        images = images.view(images.size(0), -1).numpy()  # Flatten images and convert to numpy array
+        images = images.view(images.size(0), -1).numpy()
         labels = np.array([label[0][0].item() for label in labels])
 
         X.append(images)
@@ -33,16 +33,13 @@ def My_predict():
     le = LabelEncoder()
     y = le.fit_transform(y)
 
-    # SVM 학습
     clf = svm.SVC(kernel='linear')
     clf.fit(X, y)
 
-    # 모델 평가
     predictions = clf.predict(X)
     accuracy = accuracy_score(y, predictions)
     print(f"Accuracy: {accuracy}")
 
-    # 모델 예측 예제
     sample_image = X[0].reshape(1, -1)
     predicted_label = clf.predict(sample_image)
     print(f"Predicted label: {predicted_label}")
@@ -50,15 +47,11 @@ def My_predict():
     pca = PCA(n_components=2)
     X_pca = pca.fit_transform(X)
 
-    def show_image(image_tensor, title):
-        image = image_tensor.permute(1, 2, 0).numpy()
-        plt.imshow(image)
-        plt.title(title)
-        plt.show()
-
-    # 첫 번째 배치의 이미지와 예측된 레이블 시각화
-    # for i in range(1):  # 예시로 첫 5개 이미지를 출력합니다.
-    #     show_image(dataset[i][0], f"True Label: {y[i]}")
+    # def show_image(image_tensor, title):
+    #     image = image_tensor.permute(1, 2, 0).numpy()
+    #     plt.imshow(image)
+    #     plt.title(title)
+    #     plt.show()
 
     plt.figure(figsize=(10, 7))
     for i in range(len(X_pca)):

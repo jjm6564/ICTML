@@ -28,7 +28,6 @@ class CustomDataset(Dataset):
 
     def __getitem__(self, idx):
         image = Image.open(self.imglist[idx])
-        # 이미지가 RGBA 모드인 경우 RGB 모드로 변환
         if image.mode == 'RGBA':
             image = image.convert('RGB')
         if self.transform:
